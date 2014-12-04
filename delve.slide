@@ -1,0 +1,165 @@
+Delve: A Go Debugger
+Debugging a highly concurrent language
+Tags: Go, debugger, delve, gdb
+
+Derek Parker
+
+* Outline
+
+- Why? (What's wrong with existing tools?)
+- How?
+- Handling Go's scheduler
+- Supporting multiple platforms (if you thought cross-browser was hard...)
+- Roadmap for project
+
+* Why?
+
+- Current tools simply do not work.
+- The most common tool is GDB and it is fundamentally broken when dealing with debugging Go software.
+- I have a personal vendetta against GDB.
+- (Explain live debug talk faux pas)
+
+* From the docs
+
+This is a snippet from the official docs on using GDB with Go:
+
+"GDB does not understand Go programs well. The stack management, threading, and runtime contain aspects that differ enough from the execution model GDB expects that they can confuse the debugger, even when the program is compiled with gccgo. As a consequence, although GDB can be useful in some situations, it is not a reliable debugger for Go programs, particularly heavily concurrent ones. Moreover, it is not a priority for the Go project to address these issues, which are difficult. In short, the instructions below should be taken only as a guide to how to use GDB when it works, not as a guarantee of success.
+
+In time, a more Go-centric debugging architecture may be required."
+
+* Delve to the rescue!
+
+Delve aims to be that Go-centric debugging tool.
+
+* Go threading & runtime
+
+All concurrency in Go is handled by runtime.
+
+Runtime multiplexes Goroutines onto threads.
+
+* Go support highly concurrent / parrallel execution
+
+Go has the concept of a goroutine. Goroutines are very similar to C coroutines, but are managed and multiplexed onto threads by the Go runtime.
+
+A goroutine is not a thread, but it multiplexed onto OS threads. Goroutines are very lightweight, and thousands can be in existance for highly concurrent Go programs.
+
+* Dealing with context switching
+
+Go can switch goroutine execution context at various points in time.
+
+- chan read
+- syscall invocation
+- manual scheduler yield
+
+Normal programs would not do this, and thus this can confuse a traditional debugger such as GDB.
+
+* How?
+
+* Dwarf debug information
+
+Encoded within every Go binary is Dwarf debug information. Currently a normal compile will include this information without special flags.
+
+Certain compiler flags can help with debugging Go programs such as: `gcflags="-N -l".
+
+These flags prevent inlining and registerization of code / variables for easier debugging.
+
+* Important sections
+
+Dwarf debug info is split into many different sections.
+
+- .debug_info - contains information about variables and how to address them
+- .debug_frame - contains information about stack frames, and how to set them up or unwind them
+- - This is important because local variables are stored on stack frame
+- - Return address also stored relative of stack frame
+
+* Ptrace syscalls
+
+- Work great on linux, very limited on OS X.
+- Allows one process to "attach" to another, single step, read/set registers, read/write memory.
+- `man ptrace` show more info about these syscalls.
+
+* Variable evaluation
+
+- Lookup variable in symbol table
+- Determine type
+- Figure out where variable lives
+- - Use dwarf info to calculate location
+- - Is it global? Easy
+- - Is it local? Establish stack frame, calculate offset to stack pointer
+- Read memory (different ways on different kernels)
+- Make use of memory, essentially interpret raw bytes
+
+* Implementing `next`
+
+Single stepping instructions is easy thanks to `PTRACE_SINGLESTEP`. When things become interesting is stepping source lines.
+
+- Following flow control (if statements, switch statements, loops)
+- Following through to return of function (where is this function returning to?)
+
+* Initial implementation
+
+Tried to guess where we would go. This was buggy because of conditional logic and complicated control flow.
+
+* Current implementation
+
+- Single step until new source line
+- If still in stack frame, we're done
+- If in new stack frame:
+- - Are we at return address? Done.
+- - No? We've stepped into a function, continue to return address.
+
+This implementation is much faster and eliminates bugs from playing a guessing game.
+
+* How to handle scheduler
+
+Go has an internal scheduler, similar to a kernel process scheduler.
+
+The scheduler has a few responsibilities:
+
+- Create threads
+- Move goroutines between threads
+- Facilitating entrance into cgo/syscalls
+- Alerting process deadlock
+
+* What is context switching
+
+When a goroutine reads from a channel, enters a syscalls, or intentionally yields, the scheduler must figure out what to do.
+
+For blocking calls, it wants to ensure other runnable Go code can execute. Goroutine can switch threads.
+
+* Traditional approaches
+
+The traditional approach is to manipulate the process, i.e. continue it, and then call `wait()` on that thread id. This is problematic when our Goroutine needs to coordinate with the scheduler. If the scheduler is stopped, we hang forever.
+
+* Using runtime data structures
+
+There are internal data structures maintained by the scheduler. We can use this information to continue blocked threads and scheduler thread, and ensure Delve will not hang.
+
+* Cross platform issues
+
+There's no jQuery for kernel programming to smooth out differences. Linux / XNU (Darwin/Mach) core architecture is very different.
+
+Mach has permissions for tasks (processes), must use voodoo to get permissions.
+
+Delve relies on Ptrace on Linux, and must translate a lot of calls to Mach syscalls.
+
+OS X wants process controlling processes to be code signed.
+
+* Linux!
+
+Linux loves developers. Rich suite of syscalls for process information.
+
+* OS X!
+
+OS X loves users and user interaction. More complicated system for gathering required info (mach ports).
+
+* Windows!
+
+Windows loves nothing. No idea how to make it work there.
+
+* Roadmap
+
+- OS X and Windows support
+- Better variable evaluation
+- IDE integration
+- Watchpoints
