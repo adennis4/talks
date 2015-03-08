@@ -1,0 +1,102 @@
+Delve
+Debugging Go Programs
+
+Derek Parker
+http://www.derkthedaring.com
+@DerkTheDaring
+
+* Who am I?
+
+.image images/hr_logo.png
+.caption @DerkTheDaring
+.caption Software Engineer @Hashrocket
+
+* What is Delve?
+
+* Delve is a Go centric debugger
+
+Delve was created for the sole purpose of debugging Go programs.
+
+The main goals of Delve are:
+
+- Handle the Go concurrency model
+- Be extremely easy to use
+
+To facilitate the second point, Delve provides the following:
+
+- An extremely simple command line interface
+	dlv run - Compiles, runs and attaches to your program
+	dlv test - Compiles test binary and attaches, accepting -run style regexps
+	dlv attach - Attach to existing process by pid
+- A small set of intuitive commands (break, step, next, continue, threads, goroutines, etc..)
+
+* Why build a debugger?
+
+* Existing tools do not suffice
+
+- GDB expects a more traditional model of parallel execution
+- Trips over goroutine thread switching
+- Can prevent scheduler from performing its job
+- No knowledge of Go runtime scheduler
+- No knowledge of Go types
+
+* Ease of use
+
+Delve was built to work as simply as the existing Go toolchain
+
+- Go toolchain is wonderfully simple to use
+	`go get`, `go build`, `go install`, `go test`
+- Delve was build with command line simplicity in mind
+	`dlv run`, `dlv test`, `dlv attach`
+
+* It sounded fun!
+
+.image images/gopher.png
+.caption _Gopher_ by [[http://www.reneefrench.com][Renée French]]
+
+Look at how happy that Gopher is!
+
+I wanted to hack on something fun and challenging.
+
+* Let's delve further in...
+
+* Handling the Runtime Scheduler
+
+* What does it do?
+
+- Manages OS threads
+- Handles multiplexing of goroutines
+- Ensures threads are always executing runnable goroutines
+- Is invoked for certain operations (blocking syscalls, chan ops, etc..)
+
+* How does Delve handle it?
+
+- Allow scheduler to do its job
+- Properly handle threads waiting for runnable goroutines
+- _Expect_ goroutine thread switching
+
+* DO LIVE EXAMPLES!
+
+.image images/gopherswrench.jpg _ 600
+.caption _Gophers_ _Wrench_ by [[http://www.reneefrench.com][Renée French]]
+
+* Roadmap to 1.0
+
+* Delve is beta
+
+Delve has come a long way, but there is more to be done.
+
+* Planned features
+
+- Improved variable evaluation
+- Allow user to set variables
+- Manually switch threads / goroutines
+- Improve goroutine tracking
+- IDE / editor integration (in the works)
+- More...
+
+* Hack on it!
+
+I really appreciate the excitement from the Go community.
+
+I welcome contributors! Feel free to hack on it and send in a pull request.
