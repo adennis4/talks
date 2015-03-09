@@ -20,7 +20,10 @@ Delve was created for the sole purpose of debugging Go programs.
 The main goals of Delve are:
 
 - Handle the Go concurrency model
-- Be extremely easy to use
+- Extremely ease of use
+- One step debugging (launch and debug)
+
+* Simplicity
 
 You're already in a bad mood because your software isn't working. Delve should be easy and painless to use.
 
@@ -33,20 +36,24 @@ To facilitate the second point, Delve provides the following:
 * Usage
 
 * Starting Delve
-	dlv run - Compiles, runs and attaches to your program
-	dlv test - Compiles test binary and attaches
-	dlv attach - Attach to existing process by pid
+
+Delve can be invoked with the following simple, one step commands:
+
+- dlv run - Compiles, runs and attaches to your program
+- dlv test - Compiles, runs, and attaches to test binary
+- dlv attach - Attach to existing process by pid
+- dlv ./path/to/prog - Launch existing compiled binary and attach
 
 * Debugging commands
 
-	break - Set a breakpoint at function or file:line
-	print - Evaluate a variable
-	continue - Continue program execution
-	step - single step one instruction
-	next - step to next source line
-	info (funcs, sources, args, locals) - Display info on funcs / source files in program, print all local vars, print args
-	threads - List all threads and their current positions
-	goroutines - List all goroutines
+- break - Set a breakpoint at function or file:line
+- print - Evaluate a variable
+- continue - Continue program execution
+- step - single step one instruction
+- next - step to next source line
+- info (funcs, sources, args, locals) - Display info on funcs / source files in program, print all local vars, print args
+- threads - List all threads and their current positions
+- goroutines - List all goroutines
 
 * Why build a debugger?
 
