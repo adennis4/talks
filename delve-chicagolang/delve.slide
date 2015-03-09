@@ -20,7 +20,7 @@ Delve was created for the sole purpose of debugging Go programs.
 The main goals of Delve are:
 
 - Handle the Go concurrency model
-- Extremely ease of use
+- Extreme ease of use
 - One step debugging (launch and debug)
 
 * Simplicity
@@ -32,6 +32,22 @@ To facilitate the second point, Delve provides the following:
 - An extremely simple command line interface
 - A small set of intuitive commands (break, step, next, continue, threads, goroutines, etc..)
 - No intermediate steps, simply invoke Delve and begin debugging
+
+* Installation
+
+* Linux
+
+	go get -u github.com/derekparker/delve/cmd/dlv
+
+You're done!
+
+* OS X
+
+	go get -u github.com/derekparker/delve/cmd/dlv
+
+Now, create a self signed root cert and codesign Delve.
+
+Details of how to do that are in the project README.
 
 * Usage
 

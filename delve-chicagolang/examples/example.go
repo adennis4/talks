@@ -1,9 +1,17 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+)
 
 type UselessStruct struct {
 	MyInt int
+}
+
+func useless(args ...string) {
+	runtime.Breakpoint()
+	fmt.Println(args)
 }
 
 func main() {
@@ -14,6 +22,6 @@ func main() {
 		if us.MyInt == 3 {
 			break
 		}
-		fmt.Println(greeting)
+		useless(greeting, "is the", "best meetup")
 	}
 }
