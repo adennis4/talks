@@ -1,0 +1,257 @@
+Delve into Go
+Creating a debugger for Go
+
+Derek Parker
+Software Engineer, Hashrocket
+http://derkthedaring.com
+@DerkTheDaring
+
+* About Delve
+
+.image delve_horizontal_2x.png 209 728
+.caption _Logo_ by Mike Fretto @Hashrocket
+
+* What is it?
+
+Delve is a debugger for the Go programming language.
+
+* Goals
+
+- Go centric
+- Ease of use
+- Provide usable alternative to existing tools (such as GDB)
+
+* Project history
+
+- Started a little over a year ago (shortly after GopherCon 2014).
+- First commit on May 3rd, 2014.
+- Sole contributor for first ~5 months.
+- Announced project on November 10, 2014 (to help drive contributions).
+- Only supported 64 bit Linux.
+- Only core commands implemented (break, continue, step, next, goroutines, threads).
+
+* Current state of project
+
+- Pre 1.0 (not ready for daily use).
+- 22 contributors (at the time this slide was written) [HUGE thanks to all contributors].
+- Mixture of Go / C (for Mach syscalls).
+- Supports Linux / OS X.
+- Initial support for editor integration (JSON-RPC).
+- More commands implemented (switch threads, print variables, etc..).
+
+* Future of Delve
+
+- 1.0 release.
+- Support for Windows.
+- Full support for editor integration (client implementations in other languages).
+- More advanced commands.
+
+* Why a new debugger?
+* I'll get to the technical details...
+
+But first, let me tell you a story.
+
+* It all began...
+
+on a cold Chicago evening.
+
+I was giving a talk at a Go meetup on debugging with GDB.
+
+* And whilst giving said talk...
+
+I tried to do some cool debugging stuff to impress the crowd.
+
+.iframe http://giphy.com/embed/ah7KwjMNJlhtK 480 301
+
+* When suddenly...
+
+GDB failed.
+
+* Hard.
+
+.iframe http://giphy.com/embed/KYXWGxC3gcCpq 480 480
+
+* I stood there..
+
+looking like a fool.
+
+* At which point...
+
+I vowed humanity would ever suffer that way every again...
+
+* So I decided
+
+GDB must be destroyed.
+
+* [Wait for applause and laughter to die down]
+* Now onto the less important reasons
+* Ease of use
+
+A Go debugger should be as easy to use as the rest of the Go toolchain.
+
+* Developer happiness
+
+Tools should not get in your way.
+
+You're debugging your program, so things already aren't going your way.
+
+* Debugging Go programs
+
+* Go compiler optimizations
+
+The Go compiler will perform several optimizations during compilation by default, such as:
+
+- Function inlining
+- Registerizing variables
+
+The optimizations are great for production, not great for debugging.
+
+* The fix?
+
+	go build -gcflags="-N -l"
+
+* But why?
+
+Delve handles this for you.
+
+The only step required to begin debugging with Delve is:
+
+	dlv run
+
+* That single command:
+
+- Compiles your code with optimizations disabled
+- Starts your program
+- Attaches to the process
+- Lands you at a prompt, ready to un-bug your program.
+
+* How else can we use Delve?
+* Debug standalone packages
+
+If you're developing a standalone package (no main), how can you debug your program?
+
+With Delve, it's as simple as:
+
+	dlv test
+
+That command will:
+
+- Compile a test binary
+- Start the program
+- Attach to the process
+- Land you at a prompt, ready to eradicate bugs
+
+* Lastly
+
+Delve also supports debugging existing binaries, however with the same optimization caveats mentioned above.
+
+You can invoke Delve like so, specifying a pre-built binary:
+
+	dlv ./path/to/binary
+
+* Using Delve
+* Commands
+
+Delve supports various commands to manipulate and inspect your program at runtime.
+
+[Note: Delve is pre 1.0 and these commands may change]
+
+* Control flow
+
+*break* - Set a breakpoint. Example: break foo.go:13 or break main.main.
+
+*continue* - Run until breakpoint or program termination.
+
+*step* - Single step through program.
+
+*next* - Step over to next source line.
+
+* Informational
+
+*threads* - Print status of all traced threads.
+
+*thread* <tid> - Switch to another thread.
+
+*goroutines* - Print status of all goroutines.
+
+*breakpoints* - Print information on all active breakpoints.
+
+*print* <var> - Evaluate a variable.
+
+* Continued...
+*info* <type> _[regex]_ - Outputs information about various parts of your program. An optional regex filters the list.
+
+*Example:*
+
+	(dlv) info funcs fmt.Scan.*
+
+Valid types are:
+
+	args - Prints the name and value of all arguments to the current function
+
+	funcs - Prints the name of all defined functions
+
+	locals - Prints the name and value of all local variables in the current context
+
+	sources - Prints the path of all source files
+
+	vars - Prints the name and value of all package variables in the app. Any variable that is not local or arg is considered a package variables
+
+	regs - Prints the contents of CPU registers.
+
+* Support for `runtime.Breakpoint`
+
+The Go standard library has a function called `runtime.Breakpoint`.
+
+This function is correctly handled by Delve, putting you where you actually want to be in your source, as opposed to stopping inside that function.
+
+* Why does Go confuse existing debuggers?
+
+* Existing debuggers do not understand the Go runtime.
+
+Go's runtime handles multiplexing goroutines onto threads.
+
+A goroutine could end up switching threads, confusing traditional debuggers who think of a thread as the smallest execution context.
+
+* What is the runtime?
+
+The Go runtime (specifically the scheduler) handles the multiplexing of Goroutines onto OS threads.
+
+* Context switching
+
+A Goroutine will run until it hits a scheduling point, at which time it will be put back onto the runqueue.
+
+During this time it's possible for the context (P) to have been acquired by another thread.
+
+(Unless the G has called `runtime.LockOSThread`)
+
+* Scheduling points
+
+The following are some points at which a goroutine may be added back onto the runqueue:
+
+- Blocking syscall
+- When `runtime.Gosched` is called
+- Select / channel operations
+- Blocking IO
+- More...
+
+* Traditional debugger do not understand Go stack management
+
+Every pure Go function has a prelude which inspects the stack.
+
+The purpose of this check is to see how much stack is left, and allocate a new, larger stack if we are out of room.
+
+This is important since goroutines start of with a small stack (4K).
+
+This presents a few issues, including GDBs inability to properly set up a dummy stack frame when calling Go functions.
+
+* GDB knows nothing of defer statements
+
+Given the following code:
+
+.code defer.go
+
+When debugging this program with GDB and stepping through with 'next', the defer statement will be ignored.
+
+* Enough talk!
+* Live demo
