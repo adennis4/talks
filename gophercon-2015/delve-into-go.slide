@@ -6,56 +6,16 @@ Software Engineer, Hashrocket
 http://derkthedaring.com
 @DerkTheDaring
 
-* About Delve
+* Delve
 
 .image delve_horizontal_2x.png 209 728
 .caption _Logo_ by Mike Fretto @Hashrocket
 
-* What is it?
-
-Delve is a debugger for the Go programming language.
-
-* Goals
-
-- Go centric
-- Ease of use
-- Provide usable alternative to existing tools (such as GDB)
-
-* Project history
-
-- Started a little over a year ago (shortly after GopherCon 2014).
-- First commit on May 3rd, 2014.
-- Sole contributor for first ~5 months.
-- Announced project on November 10, 2014 (to help drive contributions).
-- Only supported 64 bit Linux.
-- Only core commands implemented (break, continue, step, next, goroutines, threads).
-
-* Current state of project
-
-- Pre 1.0 (not ready for daily use).
-- 22 contributors (at the time this slide was written) [HUGE thanks to all contributors].
-- Mixture of Go / C (for Mach syscalls).
-- Supports Linux / OS X.
-- Initial support for editor integration (JSON-RPC).
-- More commands implemented (switch threads, print variables, etc..).
-
-* Future of Delve
-
-- 1.0 release.
-- Support for Windows.
-- Full support for editor integration (client implementations in other languages).
-- More advanced commands.
-
 * Why a new debugger?
-* I'll get to the technical details...
 
-But first, let me tell you a story.
+* I'll get to the technical details... (IMAGE)
 
-* It all began...
-
-on a cold Chicago evening.
-
-I was giving a talk at a Go meetup on debugging with GDB.
+* It all began... (GIF)
 
 * And whilst giving said talk...
 
@@ -65,37 +25,46 @@ I tried to do some cool debugging stuff to impress the crowd.
 
 * When suddenly...
 
-GDB failed.
-
-* Hard.
+GDB failed. Hard.
 
 .iframe http://giphy.com/embed/KYXWGxC3gcCpq 480 480
 
-* I stood there..
-
-looking like a fool.
-
-* At which point...
-
-I vowed humanity would ever suffer that way every again...
+* I stood there.. (IMAGE / GIF)
 
 * So I decided
 
 GDB must be destroyed.
 
 * [Wait for applause and laughter to die down]
+
 * Now onto the less important reasons
-* Ease of use
+- Ease of use
+- Developer happiness
+- Provide usable alternative to existing tools
+- Go centric
 
-A Go debugger should be as easy to use as the rest of the Go toolchain.
+* Project history
 
-* Developer happiness
+- Timeline format:
+	- First commit - May 3rd, 2014.
+	- Announced project - November 10, 2014
+	- Supports 64 bit Linux.
+	- Core commands (break, continue, step, next, goroutines, threads)
+	- Mixture of Go / C (for Mach syscalls)
+	- Supports OS X
+	- Initial support for editor integration (JSON-RPC)
+	- More commands (switch threads, print variables, etc..)
+	- 1.0 release.
+	- Support for Windows.
+	- Full support for editor integration (client implementations in other languages).
+	- More advanced commands.
 
-Tools should not get in your way.
+* Thank You
 
-You're debugging your program, so things already aren't going your way.
+- To the support from the community - especially those 22 contributors
 
-* Debugging Go programs
+
+* Getting technical - Debugging Go programs
 
 * Go compiler optimizations
 
